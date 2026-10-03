@@ -1,0 +1,415 @@
+<!DOCTYPE html>
+<html lang="zh-TW">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>奶茶小達人 - 互動式教學測驗</title>
+    <style>
+        :root {
+            --primary-color: #8B4513;
+            --secondary-color: #F4A460;
+            --bg-color: #FFF8DC;
+            --card-bg: #FFFFFF;
+            --correct-color: #4CAF50;
+            --wrong-color: #FF5252;
+        }
+
+        body {
+            font-family: 'Microsoft JhengHei', 'PingFang TC', sans-serif;
+            background-color: var(--bg-color);
+            margin: 0;
+            padding: 20px;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            min-height: 100vh;
+        }
+
+        .quiz-container {
+            background-color: var(--card-bg);
+            border-radius: 25px;
+            box-shadow: 0 10px 25px rgba(0,0,0,0.15);
+            width: 100%;
+            max-width: 950px; /* 再次微調加寬，適應更大字體 */
+            padding: 40px;
+            box-sizing: border-box;
+            border: 5px solid var(--secondary-color);
+        }
+
+        .header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 25px;
+        }
+
+        .quiz-title {
+            font-size: 36px;
+            color: var(--primary-color);
+            font-weight: bold;
+        }
+
+        #question-number {
+            font-size: 28px;
+            font-weight: bold;
+            color: #555;
+        }
+
+        .question-box {
+            background-color: #FFF8E7;
+            border-radius: 20px;
+            padding: 30px;
+            margin-bottom: 30px;
+            border: 3px dashed var(--secondary-color);
+            display: flex;
+            justify-content: space-between; /* 讓文字和按鈕分置左右 */
+            align-items: center; /* 垂直置中對齊 */
+            gap: 20px;
+        }
+
+        .question-text {
+            font-size: 46px; /* 【再次放大題目字體】 */
+            color: #222;
+            line-height: 1.4;
+            font-weight: 900;
+            flex-grow: 1; /* 讓文字佔據剩餘空間 */
+        }
+
+        .audio-btn {
+            background-color: #FFB74D;
+            border: none;
+            border-radius: 50%;
+            width: 70px; /* 稍微放大主語音按鈕 */
+            height: 70px;
+            font-size: 36px;
+            cursor: pointer;
+            display: inline-flex;
+            justify-content: center;
+            align-items: center;
+            box-shadow: 0 6px 8px rgba(0,0,0,0.15);
+            transition: transform 0.1s;
+            flex-shrink: 0; /* 確保按鈕不會被文字擠壓變形 */
+        }
+
+        .audio-btn:active {
+            transform: scale(0.95);
+        }
+
+        .options-container {
+            display: flex;
+            flex-direction: column;
+            gap: 20px;
+        }
+
+        .option-btn {
+            background-color: #FFFFFF;
+            border: 4px solid #FFE0B2;
+            border-radius: 20px;
+            padding: 20px 30px;
+            font-size: 34px; 
+            font-weight: bold;
+            color: #333;
+            text-align: left;
+            cursor: pointer;
+            transition: all 0.2s;
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            line-height: 1.4;
+        }
+
+        .option-btn:hover {
+            background-color: #FFF3E0;
+            border-color: var(--secondary-color);
+        }
+
+        .option-btn:disabled {
+            cursor: not-allowed;
+        }
+
+        .feedback {
+            margin-top: 30px;
+            font-size: 38px;
+            font-weight: bold;
+            text-align: center;
+            min-height: 50px;
+        }
+
+        .feedback.correct { color: var(--correct-color); }
+        .feedback.wrong { color: var(--wrong-color); }
+
+        .control-panel {
+            display: flex;
+            justify-content: flex-end;
+            align-items: center;
+            margin-top: 20px;
+            padding-top: 20px;
+            border-top: 3px solid #eee;
+        }
+
+        .btn-next {
+            background-color: var(--primary-color);
+            color: white;
+            border: none;
+            padding: 15px 40px;
+            font-size: 32px;
+            border-radius: 15px;
+            cursor: pointer;
+            font-weight: bold;
+            box-shadow: 0 6px 8px rgba(0,0,0,0.15);
+        }
+
+        .btn-next:active {
+            transform: scale(0.95);
+        }
+
+        .score-board {
+            text-align: center;
+            padding: 40px;
+        }
+
+        .score-board h2 {
+            font-size: 52px;
+            color: var(--primary-color);
+        }
+
+        .score-board p {
+            font-size: 40px;
+            margin: 30px 0;
+            font-weight: bold;
+            color: #333;
+        }
+
+        .restart-btn {
+            background-color: var(--correct-color);
+            color: white;
+            border: none;
+            padding: 20px 50px;
+            font-size: 36px;
+            border-radius: 20px;
+            cursor: pointer;
+            font-weight: bold;
+            box-shadow: 0 6px 8px rgba(0,0,0,0.2);
+        }
+    </style>
+</head>
+<body>
+
+<div class="quiz-container">
+    <div id="quiz-screen">
+        <div class="header">
+            <span class="quiz-title">🧋 奶茶小達人隨堂測驗</span>
+            <span id="question-number">第 1 / 12 題</span>
+        </div>
+
+        <div class="question-box">
+            <!-- 題目在左側 -->
+            <div class="question-text" id="question-text">載入中...</div>
+            <!-- 語音按鈕在右側 -->
+            <button class="audio-btn" onclick="speakCurrentQuestion()" title="朗讀題目">🔊</button>
+        </div>
+
+        <div class="options-container" id="options-container">
+            <!-- 選項動態生成 -->
+        </div>
+
+        <div class="feedback" id="feedback"></div>
+
+        <div class="control-panel">
+            <button class="btn-next" id="next-btn" onclick="nextQuestion()" style="display: none;">下一題 ➔</button>
+        </div>
+    </div>
+
+    <div id="score-screen" class="score-board" style="display: none;">
+        <h2>🎉 測驗完成！</h2>
+        <p id="final-score">得分：0 / 12</p>
+        <p id="score-comment"></p>
+        <button class="restart-btn" onclick="restartQuiz()">再試一次 🔄</button>
+    </div>
+</div>
+
+<script>
+    const questions = [
+        {
+            q: "1. 開始動手做奶茶之前，第一步要做什麼？",
+            options: ["先把手洗乾淨", "直接喝鮮奶", "跑去外面玩"],
+            answer: 0,
+            explain: "做餐點前一定要先洗手，保持衛生喔！"
+        },
+        {
+            q: "2. 在煮水和加熱鮮奶時，鍋子很熱，我們應該怎麼做？",
+            options: ["用手直接摸鍋子", "請老師協助，注意安全", "拿鍋子甩來甩去"],
+            answer: 1,
+            explain: "加熱時鍋子很燙，一定要請老師協助！"
+        },
+        {
+            q: "3. 如果要量水，應該使用哪一種器具？",
+            options: ["濾網", "量杯", "筷子"],
+            answer: 1,
+            explain: "量杯有刻度，可以精準測量水的毫升數。"
+        },
+        {
+            q: "4. 水煮滾後放入茶葉，大概要煮多久？",
+            options: ["30秒到1分鐘", "2 個小時", "完全不用煮"],
+            answer: 0,
+            explain: "茶葉煮 30秒~1分鐘 即可，煮太久會變苦澀。"
+        },
+        {
+            q: "5. 加熱鮮奶時，加熱到什麼狀態就可以了？",
+            options: ["一直大滾", "邊緣出現小泡泡", "變成冰塊"],
+            answer: 1,
+            explain: "鮮奶加熱到邊緣有小泡泡即可，不需要大滾。"
+        },
+        {
+            q: "6. 把煮好的奶茶倒出來時，為什麼要用「濾網」？",
+            options: ["把茶葉過濾掉", "為了把奶茶變冰", "為了讓鮮奶變色"],
+            answer: 0,
+            explain: "濾網可以避免茶葉倒入杯中影響口感。"
+        },
+        {
+            q: "7. 如果喜歡喝甜一點的奶茶，可以怎麼做？",
+            options: ["多加一點糖或煉乳", "多加一點鹽巴", "多加一點醬油"],
+            answer: 0,
+            explain: "可以依個人喜好增加糖或煉乳來調整甜度。"
+        },
+        {
+            q: "8. 想要讓奶茶口感更好，可以加什麼配料？",
+            options: ["珍珠、仙草或布丁", "高麗菜", "餅乾碎屑"],
+            answer: 0,
+            explain: "加入珍珠、仙草、布丁能讓鮮奶茶更美味！"
+        },
+        {
+            q: "9. 簡報介紹的黃金比例，250毫升的水要配多少鮮奶？",
+            options: ["50毫升", "200毫升", "1000毫升"],
+            answer: 1,
+            explain: "黃金比例是 250ml 水搭配 200ml 鮮奶。"
+        },
+        {
+            q: "10. 倒熱奶茶與用火遇到困難時，該怎麼辦？",
+            options: ["舉手請老師協助", "自己硬拿被燙傷", "放棄不做了"],
+            answer: 0,
+            explain: "安全第一！遇到危險步驟請老師幫忙。"
+        },
+        {
+            q: "11. 香濃的鮮奶茶，什麼時候喝最好喝？",
+            options: ["現煮現喝最好喝", "放在冰箱一個月", "倒在桌上喝"],
+            answer: 0,
+            explain: "現煮現喝最香濃美味！"
+        },
+        {
+            q: "12. 在鮮奶茶裡加入「抹茶粉」，會變成什麼？",
+            options: ["黑糖鮮奶茶", "抹茶鮮奶茶", "可可鮮奶茶"],
+            answer: 1,
+            explain: "加入抹茶粉就能做出一杯抹茶鮮奶茶。"
+        }
+    ];
+
+    let currentQ = 0;
+    let score = 0;
+
+    function loadQuestion() {
+        const qData = questions[currentQ];
+        document.getElementById("question-number").innerText = `第 ${currentQ + 1} / ${questions.length} 題`;
+        document.getElementById("question-text").innerText = qData.q;
+        document.getElementById("feedback").innerText = "";
+        document.getElementById("feedback").className = "feedback";
+        document.getElementById("next-btn").style.display = "none";
+
+        const optionsContainer = document.getElementById("options-container");
+        optionsContainer.innerHTML = "";
+
+        qData.options.forEach((opt, index) => {
+            const btn = document.createElement("button");
+            btn.className = "option-btn";
+            btn.innerHTML = `
+                <span>${String.fromCharCode(65 + index)}. ${opt}</span>
+                <button class="audio-btn" style="width:50px; height:50px; font-size:24px; box-shadow:none;" onclick="event.stopPropagation(); speakText('${opt}')" title="朗讀選項">🔊</button>
+            `;
+            btn.onclick = () => checkAnswer(index);
+            optionsContainer.appendChild(btn);
+        });
+
+        // 載入題目時自動朗讀
+        speakCurrentQuestion();
+    }
+
+    function checkAnswer(selectedIndex) {
+        disableOptions();
+        const qData = questions[currentQ];
+        const feedback = document.getElementById("feedback");
+
+        if (selectedIndex === qData.answer) {
+            score++;
+            feedback.innerText = "⭕ 太棒了！答對了！";
+            feedback.className = "feedback correct";
+            speakText("太棒了！答對了！");
+        } else {
+            feedback.innerText = `❌ 答錯了！${qData.explain}`;
+            feedback.className = "feedback wrong";
+            speakText("答錯了！再接再厲！");
+        }
+
+        document.getElementById("next-btn").style.display = "inline-block";
+    }
+
+    function disableOptions() {
+        const buttons = document.querySelectorAll(".option-btn");
+        buttons.forEach(btn => btn.disabled = true);
+    }
+
+    function nextQuestion() {
+        currentQ++;
+        if (currentQ < questions.length) {
+            loadQuestion();
+        } else {
+            showScore();
+        }
+    }
+
+    function showScore() {
+        document.getElementById("quiz-screen").style.display = "none";
+        document.getElementById("score-screen").style.display = "block";
+        document.getElementById("final-score").innerText = `得分：${score} / ${questions.length}`;
+        
+        let comment = "";
+        if (score === 12) comment = "🌟 太厲害了！你是完美的奶茶大師！";
+        else if (score >= 8) comment = "👍 做得很棒！已經非常熟練囉！";
+        else comment = "💪 沒關係，再看一次圖片複習會更好喔！";
+        
+        document.getElementById("score-comment").innerText = comment;
+        speakText(`測驗結束。你得到了 ${score} 分。${comment}`);
+    }
+
+    function restartQuiz() {
+        currentQ = 0;
+        score = 0;
+        document.getElementById("quiz-screen").style.display = "block";
+        document.getElementById("score-screen").style.display = "none";
+        loadQuestion();
+    }
+
+    /* TTS 語音朗讀邏輯 */
+    function speakText(text) {
+        if ('speechSynthesis' in window) {
+            window.speechSynthesis.cancel(); // 停止先前的聲音，避免重疊
+            const utterance = new SpeechSynthesisUtterance(text);
+            utterance.lang = 'zh-TW';
+            utterance.rate = 0.85; 
+            window.speechSynthesis.speak(utterance);
+        }
+    }
+
+    function speakCurrentQuestion() {
+        const qData = questions[currentQ];
+        let fullText = qData.q + "。選項有：";
+        qData.options.forEach((opt, i) => {
+            fullText += `${String.fromCharCode(65 + i)} ${opt}。`;
+        });
+        speakText(fullText);
+    }
+
+    // 啟動測驗
+    loadQuestion();
+</script>
+</body>
+</html>
